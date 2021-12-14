@@ -17,5 +17,3 @@ Happy learning, peace.
 ## Contribution
 The list of contributors who pointed out errors and suggested solutions:
 - Nguyễn Thành Đô: fixed problem 4c.
-
-2018-2020 problem sets are generally consistent.
