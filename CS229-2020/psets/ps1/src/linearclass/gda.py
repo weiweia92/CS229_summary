@@ -1,82 +1,80 @@
 import numpy as np
 import util
 
+from linear_model import LinearModel
 
-def main(train_path, valid_path, save_path, plot_path):
-    """Problem: Gaussian discriminant analysis (GDA)
 
+def main(train_path, eval_path, pred_path):
+    """Problem 1(e): Gaussian discriminant analysis (GDA)
     Args:
         train_path: Path to CSV file containing dataset for training.
-        valid_path: Path to CSV file containing dataset for validation.
-        save_path: Path to save predicted probabilities using np.savetxt().
-        plot_path: Path to save plots.
+        eval_path: Path to CSV file containing dataset for evaluation.
+        pred_path: Path to save predictions.
     """
+    # Load dataset
     x_train, y_train = util.load_dataset(train_path, add_intercept=False)
-    x_valid, y_valid = util.load_dataset(valid_path, add_intercept=False)
-    clf = GDA()
-    clf.fit(x_train, y_train)
-    util.plot(x_valid, y_valid, clf.theta, plot_path)
-    np.savetxt(save_path, clf.predict(x_valid))
+
+    # *** START CODE HERE ***
+    
+    # Train GDA
+    model = GDA()
+    model.fit(x_train, y_train)
+
+    # Plot data and decision boundary
+    util.plot(x_train, y_train, model.theta, 'output/p01e_{}.png'.format(pred_path[-5]))
+
+    # Save predictions
+    x_eval, y_eval = util.load_dataset(eval_path, add_intercept=True)
+    y_pred = model.predict(x_eval)
+    np.savetxt(pred_path, y_pred > 0.5, fmt='%d')
+
+    # *** END CODE HERE ***
 
 
-class GDA:
-    """Gaussian Discriminant Analysis.
-
-    Example usage:
-        > clf = GDA()
-        > clf.fit(x_train, y_train)
-        > clf.predict(x_eval)
-    """
-    def __init__(self, step_size=0.01, max_iter=10000, eps=1e-5,
-                 theta_0=None, verbose=True):
-        """
-        Args:
-            step_size: Step size for iterative solvers only.
-            max_iter: Maximum number of iterations for the solver.
-            eps: Threshold for determining convergence.
-            theta_0: Initial guess for theta. If None, use the zero vector.
-            verbose: Print loss values during training.
-        """
-        self.theta = theta_0
-        self.step_size = step_size
-        self.max_iter = max_iter
-        self.eps = eps
-        self.verbose = verbose
-
+class GDA(LinearModel):
     def fit(self, x, y):
-        """Fit a GDA model to training set given by x and y by updating
-        self.theta.
-
+        """Fit a GDA model to training set given by x and y.
         Args:
-            x: Training example inputs. Shape (n_examples, dim).
-            y: Training example labels. Shape (n_examples,).
+            x: Training example inputs. Shape (m, n).
+            y: Training example labels. Shape (m,).
+        Returns:
+            theta: GDA model parameters.
         """
-        # Compute phi, mu_0, mu_1, and sigma
-        phi = np.mean(y)
-        mu0 = (x[y == 0]).mean(axis=0, keepdims=True)
-        mu1 = (x[y == 1]).mean(axis=0, keepdims=True)
-        mean = np.where(y.reshape(-1, 1), mu1, mu0)
-        sigma = (x - mean).T @ (x - mean) / x.shape[0]
+        # *** START CODE HERE ***
         
-        # Compute theta in terms of the parameters
-        self.theta = np.empty(x.shape[1] + 1)
+        # Init theta
+        m, n = x.shape
+        self.theta = np.zeros(n+1)
+
+        # Compute phi, mu_0, mu_1, sigma
+        y_1 = sum(y == 1)
+        phi = y_1 / m
+        mu_0 = np.sum(x[y == 0], axis=0) / (m - y_1)
+        mu_1 = np.sum(x[y == 1], axis=0) / y_1
+        sigma = ((x[y == 0] - mu_0).T.dot(x[y == 0] - mu_0) + (x[y == 1] - mu_1).T.dot(x[y == 1] - mu_1)) / m
+
+        # Compute theta
         sigma_inv = np.linalg.inv(sigma)
-        mu_diff = (mu1 - mu0).squeeze()
-        self.theta[1:] = mu_diff @ sigma_inv
-        self.theta[0] = (np.log(phi / (1 - phi))
-                         - mu_diff @ sigma_inv @ mu_diff / 2)
+        self.theta[0] = 0.5 * (mu_0 + mu_1).dot(sigma_inv).dot(mu_0 - mu_1) - np.log((1 - phi) / phi)
+        self.theta[1:] = sigma_inv.dot(mu_1 - mu_0)
+        
+        # Return theta
+        return self.theta
+
+        # *** END CODE HERE ***
 
     def predict(self, x):
         """Make a prediction given new inputs x.
-
         Args:
-            x: Inputs of shape (n_examples, dim).
-
+            x: Inputs of shape (m, n).
         Returns:
-            Outputs of shape (n_examples,).
+            Outputs of shape (m,).
         """
-        decision = self.theta[0] + self.theta[1:] @ x.T
-        return (decision > 0).astype('int')
+        # *** START CODE HERE ***
+        
+        return 1 / (1 + np.exp(-x.dot(self.theta)))
+
+        # *** END CODE HERE
 
 
 if __name__ == '__main__':
