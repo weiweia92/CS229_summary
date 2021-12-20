@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
     num_x_values = D.shape[1] - 1
     header = ','.join(['y'] + ['x{}'.format(i) for i in range(num_x_values)])
-    np.savetxt('../data/ds5_train.csv', D[:SIZE,:], delimiter=',', header=header, comments='')
-    np.savetxt('../data/ds5_test.csv', D[SIZE:,:], delimiter=',', header=header, comments='')
+    np.savetxt('train.csv', D[:SIZE,:], delimiter=',', header=header, comments='')
+    np.savetxt('test.csv', D[SIZE:,:], delimiter=',', header=header, comments='')
 
 
     plt.figure(figsize=(12, 8))
